@@ -18,6 +18,10 @@ jobs:
       - uses: astral-sh/setup-uv@v6
         with:
           python-version: "3.12"
+          enable-cache: true
+          cache-dependency-glob: sim/uv.lock
+          # sim/ がないブランチではキャッシュが空になるので、エラーにしない
+          ignore-nothing-to-cache: true
 
       - name: Install
         if: hashFiles('sim/pyproject.toml') != ''
