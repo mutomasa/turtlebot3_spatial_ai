@@ -1,0 +1,40 @@
+# pytest で単体テスト（sim/tests）とシナリオテスト（tests/scenarios）を実行する。
+name: Test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          python-version: "3.12"
+
+      - name: Install
+        if: hashFiles('sim/pyproject.toml') != ''
+        working-directory: sim
+        run: uv sync --locked
+
+      - name: Unit tests
+        if: hashFiles('sim/pyproject.toml') != ''
+        working-directory: sim
+        run: uv run pytest -v
+
+      - name: Scenario tests
+        if: hashFiles('sim/pyproject.toml') != ''
+        working-directory: sim
+        run: |
+          if [ -d ../tests ]; then
+            uv run pytest -v ../tests
+          else
+            echo "tests/ がまだないため、シナリオテストを飛ばす"
+          fi

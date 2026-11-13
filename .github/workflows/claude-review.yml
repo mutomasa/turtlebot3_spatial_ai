@@ -1,0 +1,51 @@
+# PRを開いたとき・更新したときに、Claude が自動でレビューする。
+# マージの判断はオーナーが行う（CLAUDE.md）。
+# 事前に Settings > Secrets and variables > Actions で ANTHROPIC_API_KEY を登録する。
+name: Claude Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, ready_for_review, reopened]
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 1
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          track_progress: true
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.pull_request.number }}
+
+            このPRを日本語でレビューしてください。PRのブランチは作業ディレクトリにチェックアウト済みです。
+            リポジトリの CLAUDE.md（開発方針）と docs/design_doc.md（設計）を基準にしてください。
+
+            次の観点で確認してください。
+            - バグ・誤り（座標系の向き、単位、境界条件、例外処理）
+            - 実機の安全（ROS_DOMAIN_ID=30 との混線、/cmd_vel を意図せず出す処理、停止処理の欠落）
+            - テスト（単体テストとシナリオテストがあるか、変更をきちんと確かめているか）
+            - 開発方針の順守（1PR=1機能、PR説明の4項目、work_history.md の追記、設定値の直書き）
+            - セキュリティ（認証情報や個人情報、rosbag・人の映った画像がコミットされていないか）
+
+            具体的な行への指摘は `mcp__github_inline_comment__create_inline_comment`（confirmed: true）を使ってください。
+            最後に `gh pr comment` で、重大度順の指摘一覧と総評を1つのコメントにまとめてください。
+            PRの承認・マージはしないでください。判断はオーナーが行います。
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Read,Glob,Grep"
