@@ -20,7 +20,7 @@
 ### 2026-11-18：全体像とROS 2の仕組みの文書
 
 - ブランチ：`docs/architecture-overview`
-- PR：（作成後に記入）
+- PR：#3
 - やったこと：
   - `docs/architecture_overview.md` を追加した。デモのゴールに向けた全体像、ROS 2の仕組み（DDS、Discovery、QoS、TF2、時刻）、Burgerのセンサー出力と制御、Gazebo、Quest 3との接続をMermaidの図で説明した
 - わかったこと・残った課題：
